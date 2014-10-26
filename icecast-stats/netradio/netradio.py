@@ -45,7 +45,7 @@ def get_stats(servers):
                 if len(radio) > 1:
                     if radio in valeurs.keys():
                             if(valeurs[radio]['title']) != valeur['Current Song']:
-                                raise Exception('title changed, was ' + valeurs[radio]['title'] + ', is now: ' + valeur['Current Song'])
+                                continue
                             valeurs[radio]['listeners_count'] = valeurs[radio]['listeners_count'] + int(valeur['Current Listeners'])
                     else:
                         valeurs[radio] = { 'title': valeur['Current Song'], 'listeners_count': int(valeur['Current Listeners']) }
