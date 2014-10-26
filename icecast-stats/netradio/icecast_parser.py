@@ -5,6 +5,8 @@ Created on 26 oct. 2014
 '''
 
 from lxml import etree
+from sys import argv
+
 class icecast_parser:
     interesting_mounts = ''
     def guess_interesting_mounts(self, mountpoints, sep='-'):
@@ -30,13 +32,20 @@ class icecast_parser:
             mountpoints[mountpoint] = dinfo
                 
                 
-        return mountpoints
-                
-    
+        return mountpoints    
 
 if __name__ == '__main__':
-    ip = icecast_parser()
-    dic = ip.parse_status("http://ice.stream.frequence3.net/status.xsl")
-    mounts = ip.guess_interesting_mounts(dic)
-    print('interesting: ', mounts)
-    print(dic)
+    if len(argv) > 1:
+        for url in argv[1:]:
+            print('Treating ', url)
+            ip = icecast_parser()
+            dic = ip.parse_status(url)
+            mounts = ip.guess_interesting_mounts(dic)
+            print('interesting: ', mounts)
+            print(dic)
+    else:
+        ip = icecast_parser()
+        dic = ip.parse_status("http://ice.stream.frequence3.net/status.xsl")
+        mounts = ip.guess_interesting_mounts(dic)
+        print('interesting: ', mounts)
+        print(dic)
