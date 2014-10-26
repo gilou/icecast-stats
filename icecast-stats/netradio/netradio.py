@@ -6,6 +6,8 @@ Created on 26 oct. 2014
 
 from dns.resolver import query
 from icecast_parser import * 
+from joblib import Parallel, delayed
+from math import sqrt
 
 def get_servers(url="ice.stream.frequence3.net"):
     q = query(url, 'A')
@@ -15,9 +17,40 @@ def get_servers(url="ice.stream.frequence3.net"):
     
     return servers
 
-def get_stats(servers): 
-    pass
-
+def get_single(server):
+    ip = icecast_parser(ip=server, port=80)
+    infos = {}
+    values = ip.parse_status()
+    sname = ip._server_name
+    infos[sname] = { value:key for value,key in values.items() }
+    return infos
+    
+    
+def get_stats(servers):
+    mountpoints = 'frequence3'
+    full_infos = {}
+    mountpoints_infos = {}
+    
+    execut = Parallel(n_jobs=len(servers), backend="threading")(
+                                            delayed(get_single)(s) for s in servers
+    
+    )
+    # [ {srv1: { 'mount' : { infos...}, 'mount2' { infos }, ... } ], { srv2: { ...} } ]
+    valeurs = {}
+    
+    for serv in execut:
+        for sname, mounts in serv.items():
+            for cle, valeur in mounts.items():
+                radio = cle.rpartition('-')[0]
+                if len(radio) > 1:
+                    if radio in valeurs.keys():
+                            if(valeurs[radio]['title']) != valeur['Current Song']:
+                                raise Exception('title changed, was ' + valeurs[radio]['title'] + ', is now: ' + valeur['Current Song'])
+                            valeurs[radio]['listeners_count'] = valeurs[radio]['listeners_count'] + int(valeur['Current Listeners'])
+                    else:
+                        valeurs[radio] = { 'title': valeur['Current Song'], 'listeners_count': int(valeur['Current Listeners']) }
+    for radio, compteurs in valeurs.items():
+        print(radio, compteurs['listeners_count'], compteurs['title'], sep=';')
+    
 if __name__ == '__main__':
-    s = get_servers()
-    print(s)
+    get_stats(get_servers())
