@@ -6,21 +6,95 @@ Created on 26 oct. 2014
 
 from lxml import etree
 from sys import argv
+from urllib.parse import urlparse
 
 class icecast_parser:
-    interesting_mounts = ''
+    """
+    Class to parse icecast's status.xsl page, either directly from the .xsl URL, or given a ip & port
+    parse_url is used as "static" to get the info out of a .xsl
+    the default constructor can be used to specify the server.
+    
+    It can be called directly, with URLs to parse as parameters.
+    """
+    
+    # Potentially interesting mountpoints, can be guessed later
+    _interesting_mounts = ''
+    # IP Adress of server, either from constructor, or from the .xsl URL
+    _server_ip = ''
+    # Port
+    _server_port = 0
+    # Name (not DNS) of the server, as reported by Icecast
+    _server_name = ''
+    
+    def icecast_parser(self, ip=None, port=8000):
+        """
+        Constructor, useless if called from parse_url, server name is dynamically requested
+        """
+        if ip != None:
+            self._server_ip = ip
+            self._server_port = port
+            self._server_name = self._get_server_name()
+
+    
     def guess_interesting_mounts(self, mountpoints, sep='-'):
+        """
+        Generic function to find all potential generic mountpoints, i.e. with "separator" in it, left part being the generic name. 
+        """
         im = [ m.rpartition(sep)[0] for m in mountpoints.keys() if len(m.rpartition(sep)[0]) > 1]
         return set(im)
     
-    def parse_status(self, url=""):
+    def parse_url(self, url):
+        """
+        urlparse() for the URL, to extract port number & hostname from a URL
+        """
+        obj = urlparse(url)
+        if obj.port == None:
+            self._server_port = 80
+        else:
+            self._server_port = obj.port
+            
+        self._server_ip = obj.hostname
+        
+    def _get_server_name(self):
+        """
+        Use server_version.xsl to determine hostname as set up by the server admin
+        This allows to discriminate a server if we have been given it twice using DNS or whatever
+        """
+        if self._server_ip == '':
+            raise Exception('IP is unknown yet')
+        else:
+            version_url = self._make_version_url()
+            parser = etree.HTMLParser()
+            tree = etree.parse(version_url, parser)
+            server_infos = tree.xpath("/html/body/div/div/div[@class='newscontent']/table/tr[3]")
+            server_name = server_infos[0].xpath('td[2]')[0]
+            self._server_name = server_name
+    
+    def _make_version_url(self):
+        """ builds a /server_version.xsl url based on the server info """
+        return 'http://' + self._server_ip + ':' + str(self._server_port) + '/' + 'server_version.xsl'
+        
+    def parse_status(self, url):
+        """
+        Parse a /status.xsl URL in order to fetch all the information it gives about all the mountpoints on the server
+        This returns a dictionnary with the mountpoint as the key, and a dictionnary as a value, with the info for the mount points.
+        It looks like this { 'my_mountpoint': { 'Current Listeners': '3', 'Stream Title': 'My special radio', 'Peak Listeners': '91', ...} }
+        """
+        
+        # Fetch the info from the URL, to define server_*
+        self.parse_url(url)
         parser = etree.HTMLParser()
         tree = etree.parse(url, parser)
+        # Extract the relevant part of the HTML code
         sources = tree.xpath('/html/body/div/div[@class="roundcont"]')
         mountpoints = {}
+        
+        # For each mountpoints, we'll fetch the mount point name, then the array with all info
         for i in sources:
+            # That is where the mountpoint is located
             mountpoint = i.xpath('./div[@class="newscontent"]/div/table/tr/td/h3')[0].text.rpartition('/')[2]
             
+            # That's our array with all the info about the mountpoint, and the dictionary to store it
             infos = i.xpath('./div[@class="newscontent"]/table/tr')
             dinfo = {}
             for lignes in infos:
@@ -46,6 +120,7 @@ if __name__ == '__main__':
     else:
         ip = icecast_parser()
         dic = ip.parse_status("http://ice.stream.frequence3.net/status.xsl")
+        ip._get_server_name()
         mounts = ip.guess_interesting_mounts(dic)
         print('interesting: ', mounts)
         print(dic)
