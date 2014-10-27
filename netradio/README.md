@@ -3,3 +3,5 @@ Quick and dirty script to grab all information from the default icecast status.x
 Output is done in JSON for now, just to try a few possibilities
 
 It is written in Python3, and requires dnspython (dnspython3 in pip) joblib and libxml (lxml)
+
+Usage: ./netradio.py
