@@ -6,7 +6,7 @@ Created on 26 oct. 2014
 
 from lxml import etree
 from sys import argv
-from urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse
 
 class icecast_parser:
     """
