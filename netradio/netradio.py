@@ -8,8 +8,8 @@ Created on 26 oct. 2014
 from dns.resolver import query
 from icecast_parser import * 
 from joblib import Parallel, delayed
-from math import sqrt
 import json
+import sys
 
 def get_servers(url="ice.stream.frequence3.net"):
     q = query(url, 'A')
@@ -26,7 +26,7 @@ def get_single(server):
     return infos
     
     
-def get_stats(servers):
+def get_stats(servers,prefix=''):
     execut = Parallel(n_jobs=len(servers), backend="threading")(
                                             delayed(get_single)(s) for s in servers
     
@@ -37,7 +37,7 @@ def get_stats(servers):
     for serv in execut:
             for cle, valeur in serv.items():
                 radio = cle.rpartition('-')[0]
-                if len(radio) > 1:
+                if len(radio) > 1 and not (prefix != '' and radio != prefix):
                     if radio in valeurs.keys():
                             if(valeurs[radio]['title']) != valeur['Current Song']:
                                 continue
@@ -48,4 +48,8 @@ def get_stats(servers):
     print(json.dumps(valeurs, sort_keys=True, indent=4))
     
 if __name__ == '__main__':
-    get_stats(get_servers())
+    if len(sys.argv) > 1:
+        for radio in sys.argv[1:]:
+            get_stats(get_servers(), prefix=radio)
+    else:
+        get_stats(get_servers())
