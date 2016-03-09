@@ -67,7 +67,7 @@ class icecast_parser:
             version_url = self._make_version_url()
             parser = etree.HTMLParser()
             tree = etree.parse(version_url, parser)
-            server_infos = tree.xpath("/html/body/div/div/div[@class='newscontent']/table/tr[3]")
+            server_infos = tree.xpath("/html/body/div[@class='roundbox']/table[1]/tbody/tr[3]")
             server_name = server_infos[0].xpath('td[2]')[0].text
             self._server_name = server_name
     
@@ -99,16 +99,16 @@ class icecast_parser:
         parser = etree.HTMLParser()
         tree = etree.parse(url, parser)
         # Extract the relevant part of the HTML code
-        sources = tree.xpath('/html/body/div/div[@class="roundcont"]')
+        sources = tree.xpath('/html/body/div[@class="roundbox"]')
         mountpoints = {}
         
         # For each mountpoints, we'll fetch the mount point name, then the array with all info
         for i in sources:
             # That is where the mountpoint is located
-            mountpoint = i.xpath('./div[@class="newscontent"]/div/table/tr/td/h3')[0].text.rpartition('/')[2]
+            mountpoint = i.xpath('./div[@class="mounthead"]/h3')[0].text.rpartition('/')[2]
             
             # That's our array with all the info about the mountpoint, and the dictionary to store it
-            infos = i.xpath('./div[@class="newscontent"]/table/tr')
+            infos = i.xpath('./div[@class="mountcont"]/table/tbody/tr')
             dinfo = {}
             for lignes in infos:
                 info = lignes.xpath('./td')                

@@ -39,11 +39,11 @@ def get_stats(servers,prefix=''):
                 radio = cle.rpartition('-')[0]
                 if len(radio) > 1 and not (prefix != '' and radio != prefix):
                     if radio in valeurs.keys():
-                            if(valeurs[radio]['title']) != valeur['Current Song']:
+                            if(valeurs[radio]['title']) != valeur['Currently playing']:
                                 continue
-                            valeurs[radio]['listeners_count'] = valeurs[radio]['listeners_count'] + int(valeur['Current Listeners'])
+                            valeurs[radio]['listeners_count'] = valeurs[radio]['listeners_count'] + int(valeur['Listeners (current)'])
                     else:
-                        valeurs[radio] = { 'title': valeur['Current Song'], 'listeners_count': int(valeur['Current Listeners']) }
+                        valeurs[radio] = { 'title': valeur['Currently playing'], 'listeners_count': int(valeur['Listeners (current)']) }
     
     print(json.dumps(valeurs, sort_keys=True, indent=4))
     
