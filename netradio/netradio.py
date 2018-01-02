@@ -37,7 +37,9 @@ def get_stats(servers,prefix=''):
     for serv in execut:
             for cle, valeur in serv.items():
                 radio = cle.rpartition('-')[0]
-                if len(radio) > 1 and not (prefix != '' and radio != prefix):
+                if radio == '':
+                    radio = cle.rpartition('.')[0]
+                if len(radio) > 1 and not (prefix != '' and radio != prefix) :
                     titre = valeur['Currently playing']
                     if titre == None:
                         continue
